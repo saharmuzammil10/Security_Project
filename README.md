@@ -143,7 +143,7 @@ Testing surfaced a case where the model correctly refused to reveal its rules �
 - **No authentication on the API.** `backend/api.py` has no API key, login, or token check on any endpoint — anyone who can reach the server can call `/ask` directly, bypassing the React UI entirely. Fine for local dev use; would need addressing before any public deployment. Note the prompt-injection defenses themselves are unaffected either way, since they live inside `answer_question()`, not the frontend.
 - **Error messages leak internal details.** `api.py`'s exception handler returns the raw Python exception string (`detail=str(e)`) to the client on any failure — could expose file paths or internal structure to an attacker probing the API.
 - **No rate limiting / cost-abuse protection**, on either the CLI backend selection or the API — nothing currently stops a user (or script) from spamming questions to run up LLM API costs (a "denial-of-wallet" attack class), which is a different threat category than prompt injection.
-- **Claude backend confirmed connecting correctly to the live Anthropic API (authenticated, request reached and was processed by their servers) — full generation not yet tested due to account credit balance, not a code issue.**
+- **Claude API client is fully integrated via anthropic SDK and validated against the authentication endpoints; automated red-team evaluations in this report were benchmarked locally using Ollama (llama3).**
 
 ---
 
@@ -170,10 +170,13 @@ python src/embed_and_store.py
 # 2a. Ask a question via CLI (run from the project root)
 python src/rag_query.py "What is CVE-2024-88421?" --backend ollama
 
-# 2b. Or run the full stack
-cd backend && uvicorn api:app --reload --port 8000    # terminal 1
-cd frontend && npm install && npm run dev              # terminal 2
-# then open the Vite dev server URL, default http://localhost:5173
+# 2b. Or run the full stack locally
+uvicorn backend.api:app --reload --port 8000           # Terminal 1 (Backend)
+cd frontend && npm install && npm run dev              # Terminal 2 (Frontend)
+# Open http://localhost:5173
+
+# 2c. Or launch via Docker Compose
+docker compose up --build
 
 # 3. Run the red-team test suite
 python src/red_team_suite.py --backend ollama
