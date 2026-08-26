@@ -1,0 +1,44 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      # Points the app container at the 'ollama' service by its Compose
+      # network name -- 'localhost' would NOT work here, since each
+      # container has its own separate localhost.
+      - OLLAMA_HOST=http://ollama:11434
+      # Optional: only needed if you plan to use --backend claude from
+      # inside the container. Pass it at `docker compose up` time via
+      # your shell environment or a .env file in this same directory
+      # (Compose auto-loads .env, separate from src/.env).
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+    depends_on:
+      ollama:
+        condition: service_healthy
+    volumes:
+      # Persist chunks/vector DB/logs across container restarts
+      - ./data:/SECURITY_PROJECT/data
+      - ./documents:/SECURITY_PROJECT/documents
+
+volumes:
+  ollama_data:

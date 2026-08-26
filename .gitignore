@@ -1,0 +1,39 @@
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Python Artifacts & Virtual Environments
+venv/
+.venv/
+vrag/
+.vrag/
+env/
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.pytest_cache/
+
+# Node & Frontend Build Artifacts
+node_modules/
+frontend/node_modules/
+dist/
+build/
+.vite/
+npm-debug.log*
+yarn-debug.log*
+
+# Vector Database & Local Data Stores
+# Vector Database & Local Data Stores
+data/chroma_db/
+**/chroma_db/
+*.sqlite3
+*.log
+
+# OS & Editor Metadata
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

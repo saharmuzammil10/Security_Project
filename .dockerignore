@@ -1,0 +1,37 @@
+# Virtual Environments & Python Cache
+vrag/
+vrag
+.venv/
+venv/
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+
+# Secrets & Environment Files
+.env
+.env.*
+!.env.example
+
+# Node Dependencies & Build Artifacts
+node_modules/
+frontend/node_modules/
+dist/
+build/
+.vite/
+
+# Database & Runtime Data
+data/chroma_db/
+data/*.jsonl
+*.sqlite3
+
+# Git & CI/CD Configs
+.git/
+.github/
+.gitignore
+
+# IDE & OS Metadata
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

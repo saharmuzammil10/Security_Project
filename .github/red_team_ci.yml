@@ -1,0 +1,55 @@
+name: Red Team CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # Always runs, needs no secrets, no LLM, finishes in seconds. This is a
+  # SMOKE TEST -- it confirms the suite itself runs without crashing and
+  # that basic regex catches at least don't regress. It is NOT a security
+  # gate: the regex layer is intentionally weak (~7% block rate observed
+  # in testing) and is not a meaningful pass/fail bar on its own.
+  smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run regex-layer red team suite (no LLM required)
+        working-directory: src
+        run: python red_team_suite.py --layer regex
+
+  # The REAL security gate. Only runs if an ANTHROPIC_API_KEY secret is
+  # configured in this repo's settings -- GitHub's free runners can't
+  # reasonably host a local LLM (no GPU, model downloads would be slow
+  # and flaky), so this uses the Claude API instead for a fast, reliable,
+  # consistent CI signal. Fails the build if the full defended pipeline's
+  # block rate against known attack payloads drops below 80%, or if any
+  # legitimate question gets wrongly blocked (false positive).
+  security-gate:
+    runs-on: ubuntu-latest
+    needs: smoke-test
+    if: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run full red team suite against Claude backend
+        working-directory: src
+        run: >
+          python red_team_suite.py
+          --layer all
+          --backend claude
+          --fail-below-block-rate 0.8
+          --fail-on-false-positive
